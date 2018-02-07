@@ -22,7 +22,6 @@ public class JokeEndpoint {
     public JokeBean tell() {
         JokeBean jokeBean = new JokeBean();
         jokeBean.setJoke(JokeTeller.tell());
-
         return jokeBean;
     }
 

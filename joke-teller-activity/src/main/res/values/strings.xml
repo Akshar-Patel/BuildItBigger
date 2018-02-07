@@ -1,3 +1,5 @@
 <resources>
   <string name="app_name">joke-teller-activity</string>
+  <string name="button_ok">ok</string>
+  <string name="key_extra_joke">extra_joke</string>
 </resources>
