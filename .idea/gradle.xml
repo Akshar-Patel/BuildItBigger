@@ -10,6 +10,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/backend" />
+            <option value="$PROJECT_DIR$/joke-lib" />
+            <option value="$PROJECT_DIR$/joke-teller-activity" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
