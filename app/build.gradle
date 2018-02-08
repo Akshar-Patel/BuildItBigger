@@ -65,5 +65,5 @@ dependencies {
     compile 'com.android.support.test.espresso.idling:idling-concurrent:3.0.1'
 
     compile project(path: ':joke-teller-activity')
-    //freeCompile 'com.google.android.gms:play-services-ads:11.8.0'
+    freeImplementation 'com.google.android.gms:play-services-ads:11.8.0'
 }
