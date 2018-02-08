@@ -3,13 +3,14 @@ package com.example.build_it_bigger;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v4.util.Pair;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
+import android.support.test.espresso.idling.CountingIdlingResource;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.Toast;
 import com.example.joke_teller_activity.JokeTellerActivity;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
@@ -20,28 +21,49 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
+  private static CountingIdlingResource mCountingIdlingResource;
+  private EndpointsAsyncTask mEndpointsAsyncTask;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    new EndpointsAsyncTask().execute(this);
+    mEndpointsAsyncTask = new EndpointsAsyncTask();
+    mEndpointsAsyncTask.execute(this);
 
     Button tellMeOneMoreButton = findViewById(R.id.button_tell_me_one_more);
     tellMeOneMoreButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View view) {
-        new EndpointsAsyncTask().execute(view.getContext());
+        mEndpointsAsyncTask = new EndpointsAsyncTask();
+        mEndpointsAsyncTask.execute(view.getContext());
       }
     });
   }
 
   static class EndpointsAsyncTask extends AsyncTask<Context, Void, String> {
+
     private static JokeApi myApiService = null;
     private Context context;
 
+    private String joke;
+
+    public EndpointsAsyncTask() {
+      mCountingIdlingResource = null;
+    }
+
+    public EndpointsAsyncTask(
+        CountingIdlingResource countingIdlingResource) {
+      mCountingIdlingResource = countingIdlingResource;
+      if (mCountingIdlingResource != null) {
+        mCountingIdlingResource.increment();
+      }
+    }
+
     @Override
     protected String doInBackground(Context... params) {
-      if(myApiService == null) {  // Only do this once
+
+      if (myApiService == null) {  // Only do this once
         JokeApi.Builder builder = new JokeApi.Builder(AndroidHttp.newCompatibleTransport(),
             new AndroidJsonFactory(), null)
             // options for running against local devappserver
@@ -50,7 +72,8 @@ public class MainActivity extends AppCompatActivity {
             .setRootUrl("http://10.0.2.2:8080/_ah/api/")
             .setGoogleClientRequestInitializer(new GoogleClientRequestInitializer() {
               @Override
-              public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest) throws IOException {
+              public void initialize(AbstractGoogleClientRequest<?> abstractGoogleClientRequest)
+                  throws IOException {
                 abstractGoogleClientRequest.setDisableGZipContent(true);
               }
             });
@@ -70,10 +93,35 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPostExecute(String result) {
-      Toast.makeText(context, result, Toast.LENGTH_LONG).show();
-      Intent intent = new Intent(context,JokeTellerActivity.class);
-      intent.putExtra(context.getString(R.string.key_extra_joke),result);
+      joke = result;
+      if (mCountingIdlingResource != null) {
+        mCountingIdlingResource.decrement();
+      }
+      Intent intent = new Intent(context, JokeTellerActivity.class);
+      intent.putExtra(context.getString(R.string.key_extra_joke), result);
       context.startActivity(intent);
     }
+
+    String getJokeResult() {
+      return joke;
+    }
+  }
+
+  /**
+   * Only called from test.
+   */
+  @VisibleForTesting
+  @NonNull
+  public CountingIdlingResource getCountingIdlingResource() {
+    if (mCountingIdlingResource == null) {
+      mCountingIdlingResource = new CountingIdlingResource("JokeApiCall");
+    }
+    return mCountingIdlingResource;
+  }
+
+  @VisibleForTesting
+  @NonNull
+  public EndpointsAsyncTask getEndpointsAsyncTask() {
+    return mEndpointsAsyncTask;
   }
 }
